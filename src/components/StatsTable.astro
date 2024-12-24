@@ -1,0 +1,79 @@
+---
+---
+<div class="stats-table-container">
+  <table id="statsTable" class="stats-table">
+    <thead>
+      <tr>
+        <th>Crate</th>
+        <th>Total Downloads</th>
+        <th>Recent Downloads</th>
+        <th>Version</th>
+        <th>Last Updated</th>
+        <th>Links</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data will be populated by JavaScript -->
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .stats-table-container {
+    margin: 2rem 0;
+    overflow-x: auto;
+  }
+
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .stats-table th {
+    background: #f7fafc;
+    font-weight: 600;
+    color: #4a5568;
+  }
+
+  .stats-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .crate-link {
+    color: #3182ce;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .crate-link:hover {
+    text-decoration: underline;
+  }
+
+  .icon-links {
+    display: flex;
+    gap: 1rem;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .icon-link {
+    color: #4a5568;
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .icon-link:hover {
+    color: #3182ce;
+  }
+</style>

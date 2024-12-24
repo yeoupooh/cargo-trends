@@ -1,0 +1,157 @@
+---
+---
+<div class="search-section">
+  <div class="search-container">
+    <input 
+      type="text" 
+      id="crateInput" 
+      placeholder="Enter crate name (e.g., tokio, serde)"
+      class="crate-input"
+      autocomplete="off"
+    />
+    <div id="suggestions" class="suggestions-container"></div>
+  </div>
+  <button id="addCrate" class="add-button">Add Crate</button>
+</div>
+
+<script>
+  import { searchCrates } from '../utils/cratesApi';
+
+  const input = document.getElementById('crateInput');
+  const addButton = document.getElementById('addCrate');
+  const suggestionsContainer = document.getElementById('suggestions');
+  let debounceTimer;
+
+  input.addEventListener('input', async (e) => {
+    clearTimeout(debounceTimer);
+    const query = e.target.value.trim();
+    
+    debounceTimer = setTimeout(async () => {
+      const suggestions = await searchCrates(query);
+      displaySuggestions(suggestions);
+    }, 300);
+  });
+
+  input.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addButton.click();
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    // Small delay to allow clicking on suggestions
+    setTimeout(() => {
+      suggestionsContainer.innerHTML = '';
+    }, 200);
+  });
+
+  function displaySuggestions(suggestions) {
+    suggestionsContainer.innerHTML = '';
+    
+    if (suggestions.length === 0) {
+      suggestionsContainer.style.display = 'none';
+      return;
+    }
+
+    suggestions.forEach(crate => {
+      const div = document.createElement('div');
+      div.className = 'suggestion-item';
+      div.innerHTML = `
+        <div class="suggestion-name">${crate.name}</div>
+        <div class="suggestion-desc">${crate.description || ''}</div>
+      `;
+      
+      div.addEventListener('click', () => {
+        input.value = crate.name;
+        suggestionsContainer.innerHTML = '';
+        addButton.click();
+      });
+      
+      suggestionsContainer.appendChild(div);
+    });
+    
+    suggestionsContainer.style.display = 'block';
+  }
+</script>
+
+<style>
+  .search-section {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .search-container {
+    flex: 1;
+    position: relative;
+  }
+
+  .crate-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+
+  .suggestions-container {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .suggestion-item {
+    padding: 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .suggestion-item:last-child {
+    border-bottom: none;
+  }
+
+  .suggestion-item:hover {
+    background: #f7fafc;
+  }
+
+  .suggestion-name {
+    font-weight: 500;
+    color: #2d3748;
+  }
+
+  .suggestion-desc {
+    font-size: 0.875rem;
+    color: #718096;
+    margin-top: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .add-button {
+    padding: 0.75rem 1.5rem;
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .add-button:hover {
+    background-color: var(--accent-light);
+  }
+</style>

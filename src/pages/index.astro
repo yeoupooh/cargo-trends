@@ -1,0 +1,27 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PackageComparison from '../components/PackageComparison.astro';
+---
+
+<Layout title="Package Comparison">
+  <main>
+    <h1>Package Comparison Tool</h1>
+    <PackageComparison />
+  </main>
+</Layout>
+
+<style>
+  main {
+    margin: auto;
+    padding: 1rem;
+    max-width: 1200px;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin: 2rem 0;
+    color: #2d3748;
+  }
+</style>

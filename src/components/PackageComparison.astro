@@ -1,0 +1,186 @@
+---
+import SearchBar from './SearchBar.astro';
+import StatsTable from './StatsTable.astro';
+import DownloadsChart from './DownloadsChart.astro';
+---
+
+<div class="comparison-container">
+  <SearchBar />
+  <StatsTable />
+  <DownloadsChart />
+</div>
+
+<script>
+  import Chart from 'chart.js/auto';
+  import { fetchCrateData, formatNumber, formatDate } from '../utils/cratesApi';
+
+  let chart;
+  const crates = new Set();
+
+  function initChart() {
+    const ctx = document.getElementById('downloadsChart');
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: []
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Crate Downloads Comparison'
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => formatNumber(value)
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function removeCrateFromChart(crateName) {
+    const datasetIndex = chart.data.datasets.findIndex(dataset => dataset.label === crateName);
+    if (datasetIndex > -1) {
+      chart.data.datasets.splice(datasetIndex, 1);
+      chart.update();
+    }
+  }
+
+  function updateChart(crateName, downloads) {
+    const dates = downloads.map(d => formatDate(d.date));
+    const counts = downloads.map(d => d.downloads);
+    
+    const color = `hsl(${Math.random() * 360}, 70%, 50%)`;
+    
+    chart.data.labels = dates;
+    chart.data.datasets.push({
+      label: crateName,
+      data: counts,
+      borderColor: color,
+      tension: 0.1
+    });
+    
+    chart.update();
+  }
+
+  function updateStatsTable(crateInfo) {
+    const tbody = document.querySelector('#statsTable tbody');
+    const row = document.createElement('tr');
+    row.dataset.crateName = crateInfo.name;
+    
+    // Extract the GitHub repository path from the repository URL
+    const repoPath = crateInfo.repository?.replace(/^https?:\/\/github\.com\//, '') || '';
+    
+    row.innerHTML = `
+      <td>
+        <a href="https://crates.io/crates/${crateInfo.name}" 
+           class="crate-link" 
+           target="_blank" 
+           rel="noopener noreferrer">${crateInfo.name}</a>
+      </td>
+      <td>${formatNumber(crateInfo.downloads)}</td>
+      <td>${formatNumber(crateInfo.recent_downloads)}</td>
+      <td>${crateInfo.max_version}</td>
+      <td>${formatDate(crateInfo.updated_at)}</td>
+      <td>
+        <div class="icon-links">
+          <a href="https://github.com/${repoPath}" 
+             class="icon-link" 
+             title="GitHub Repository"
+             target="_blank" 
+             rel="noopener noreferrer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg>
+          </a>
+          <a href="https://docs.rs/${crateInfo.name}" 
+             class="icon-link" 
+             title="Documentation"
+             target="_blank" 
+             rel="noopener noreferrer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+          </a>
+          <button class="delete-button" title="Remove crate">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"></path>
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </td>
+    `;
+    
+    // Add delete button click handler
+    const deleteButton = row.querySelector('.delete-button');
+    deleteButton.addEventListener('click', () => {
+      crates.delete(crateInfo.name);
+      removeCrateFromChart(crateInfo.name);
+      row.remove();
+    });
+    
+    tbody.appendChild(row);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initChart();
+
+    const addButton = document.getElementById('addCrate');
+    const input = document.getElementById('crateInput');
+
+    addButton.addEventListener('click', async () => {
+      const crateName = input.value.trim();
+      if (!crateName || crates.has(crateName)) return;
+
+      crates.add(crateName);
+      const data = await fetchCrateData(crateName);
+      
+      if (data) {
+        updateChart(crateName, data.downloads);
+        updateStatsTable(data.info);
+      }
+      
+      input.value = '';
+    });
+  });
+</script>
+
+<style>
+  .comparison-container {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 2rem;
+  }
+
+  .delete-button {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: #e53e3e;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .delete-button:hover {
+    background: #fff5f5;
+    color: #c53030;
+  }
+</style>
